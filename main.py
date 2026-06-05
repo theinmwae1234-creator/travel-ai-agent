@@ -321,12 +321,12 @@ def plan_trip(request: TripRequest):
         ],
 
         "agent_reasoning": [
-            "The agent analyzed the user request and selected tools based on city, interests, budget, weather, and travel style.",
-            "The planner decided which tools were relevant and created an execution plan.",
-            "The agent retrieved related memories and travel knowledge before generating the itinerary.",
-            "RAG retrieved relevant destination knowledge, and matching places were extracted from the retrieved context.",
-            "The itinerary prioritizes places that match the user's interests, then fills remaining slots using RAG and the attraction database.",
-            "Weather, budget, and travel style constraints were considered before finalizing the itinerary."
+            f"User requested a trip to {request.city}.",
+            f"Interests detected: {request.interests}.",
+            f"Budget detected: {request.budget}.",
+            f"Travel style detected: {request.travel_style}.",
+            f"Selected tools: {', '.join(planning_result['selected_tools'])}.",
+            f"Retrieved {len(final_retrieved_knowledge)} knowledge chunks from RAG."
         ],
 
         "day_1": {
