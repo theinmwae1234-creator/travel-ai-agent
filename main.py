@@ -15,6 +15,7 @@ class TripRequest(BaseModel):
     city: str
     interests: str
     budget: str
+    travel_style: str = "general"
 
 
 def get_attractions(city: str, interests: str):
@@ -124,6 +125,24 @@ def make_weather_aware_note(weather: str):
         return "Weather data could not be interpreted, so the agent uses a general itinerary."
 
 
+def get_travel_style_note(travel_style: str):
+    style = travel_style.lower()
+
+    if style == "pet-friendly":
+        return "Pet-friendly constraint detected: prioritize outdoor areas, parks, walkable districts, and avoid places that may restrict pets."
+
+    if style == "family":
+        return "Family travel style detected: prioritize safe, accessible, lower-effort attractions and avoid overly packed schedules."
+
+    if style == "relaxed":
+        return "Relaxed travel style detected: reduce rushing and keep the itinerary comfortable with fewer transitions."
+
+    if style == "adventure":
+        return "Adventure travel style detected: include more exploration-heavy and active experiences."
+
+    return "General travel style selected: create a balanced itinerary."
+
+
 def extract_places_from_rag(retrieved_knowledge):
     known_places = [
         "Akihabara",
@@ -169,13 +188,15 @@ def plan_trip(request: TripRequest):
     conversation_memory.append({
         "city": request.city,
         "interests": request.interests,
-        "budget": request.budget
+        "budget": request.budget,
+        "travel_style": request.travel_style
     })
 
     memory_text = (
         f"City: {request.city}, "
         f"Interests: {request.interests}, "
-        f"Budget: {request.budget}"
+        f"Budget: {request.budget}, "
+        f"Travel Style: {request.travel_style}"
     )
 
     similar_memories = retrieve_memory(memory_text)
@@ -190,7 +211,7 @@ def plan_trip(request: TripRequest):
         weather
     )
 
-    rag_query = f"{request.city} {request.interests} travel attractions food"
+    rag_query = f"{request.city} {request.interests} {request.travel_style} travel attractions food"
     retrieved_knowledge = retrieve_travel_knowledge(rag_query)
 
     rag_places = extract_places_from_rag(retrieved_knowledge)
@@ -203,12 +224,14 @@ def plan_trip(request: TripRequest):
 
     food_recommendation = get_food_recommendation(request.city, request.budget)
     weather_note = make_weather_aware_note(weather)
+    travel_style_note = get_travel_style_note(request.travel_style)
 
     itinerary = {
         "city": request.city,
         "trip_length": "2 days",
         "current_weather": weather,
         "weather_aware_note": weather_note,
+        "travel_style_note": travel_style_note,
 
         "short_term_memory": conversation_memory,
         "long_term_memory_retrieved": similar_memories,
@@ -217,22 +240,25 @@ def plan_trip(request: TripRequest):
 
         "user_preferences": {
             "interests": request.interests,
-            "budget": request.budget
+            "budget": request.budget,
+            "travel_style": request.travel_style
         },
 
         "selected_tools": planning_result["selected_tools"],
         "tools_used": planning_result["selected_tools"],
 
         "execution_plan": planning_result["execution_plan"],
-        "planning_notes": planning_result["planning_notes"],
+        "planning_notes": planning_result["planning_notes"] + [
+            travel_style_note
+        ],
 
         "agent_reasoning": [
-            "The agent analyzed the user request and selected tools based on city, interests, budget, and weather availability.",
+            "The agent analyzed the user request and selected tools based on city, interests, budget, weather, and travel style.",
             "The planner decided which tools were relevant and created an execution plan.",
             "The agent retrieved related memories and travel knowledge before generating the itinerary.",
             "RAG retrieved relevant destination knowledge, and matching places were extracted from the retrieved context.",
             "The itinerary prioritizes RAG-suggested places first, then fills remaining slots using the attraction database.",
-            "Weather and budget conditions were considered before finalizing the itinerary."
+            "Weather, budget, and travel style constraints were considered before finalizing the itinerary."
         ],
 
         "day_1": {
