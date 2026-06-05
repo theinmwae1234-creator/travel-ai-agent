@@ -9,7 +9,7 @@ def load_knowledge_base(file_path="data/travel_knowledge.txt"):
     ]
 
 
-def retrieve_travel_knowledge(query, top_k=3):
+def retrieve_travel_knowledge(query, top_k=5):
     chunks = load_knowledge_base()
 
     query_words = set(

@@ -154,6 +154,7 @@ def extract_places_from_rag(retrieved_knowledge):
         "Meiji Shrine",
         "Shibuya",
         "Harajuku",
+        "Harajuku Takeshita Street",
         "Lau Pa Sat",
         "Maxwell Food Centre",
         "Gardens by the Bay",
@@ -161,11 +162,16 @@ def extract_places_from_rag(retrieved_knowledge):
         "Chinatown",
         "Little India",
         "Kampong Glam",
+        "Orchard Road",
+        "Bugis Street",
         "Eiffel Tower",
         "Louvre Museum",
         "Montmartre",
         "Le Marais",
-        "Musée d'Orsay"
+        "Musée d'Orsay",
+        "Notre-Dame area",
+        "Champs-Élysées",
+        "Galeries Lafayette"
     ]
 
     extracted_places = []
@@ -176,6 +182,47 @@ def extract_places_from_rag(retrieved_knowledge):
                 extracted_places.append(place)
 
     return extracted_places
+
+
+def prioritize_places_by_interest(city: str, interests: str, places: list):
+    interests_lower = interests.lower()
+
+    priority_map = {
+        "Tokyo": {
+            "anime": ["Akihabara", "Nakano Broadway"],
+            "food": ["Tsukiji Outer Market", "Shinjuku Omoide Yokocho"],
+            "culture": ["Sensoji Temple", "Meiji Shrine", "Tokyo Skytree"],
+            "shopping": ["Shibuya", "Harajuku", "Harajuku Takeshita Street"]
+        },
+        "Singapore": {
+            "food": ["Lau Pa Sat", "Maxwell Food Centre"],
+            "nature": ["Gardens by the Bay", "Singapore Botanic Gardens"],
+            "culture": ["Chinatown", "Little India", "Kampong Glam"],
+            "shopping": ["Orchard Road", "Bugis Street"]
+        },
+        "Paris": {
+            "art": ["Louvre Museum", "Musée d'Orsay"],
+            "culture": ["Louvre Museum", "Musée d'Orsay", "Montmartre", "Notre-Dame area"],
+            "food": ["Le Marais", "Saint-Germain cafés"],
+            "shopping": ["Champs-Élysées", "Galeries Lafayette"]
+        }
+    }
+
+    city_priorities = priority_map.get(city, {})
+    prioritized_places = []
+
+    for interest, interest_places in city_priorities.items():
+        if interest in interests_lower:
+            for place in interest_places:
+                if place in places and place not in prioritized_places:
+                    prioritized_places.append(place)
+
+    remaining_places = [
+        place for place in places
+        if place not in prioritized_places
+    ]
+
+    return prioritized_places + remaining_places
 
 
 @app.get("/")
@@ -214,13 +261,34 @@ def plan_trip(request: TripRequest):
     rag_query = f"{request.city} {request.interests} {request.travel_style} travel attractions food"
     retrieved_knowledge = retrieve_travel_knowledge(rag_query)
 
-    rag_places = extract_places_from_rag(retrieved_knowledge)
+    city_filtered_knowledge = [
+        chunk for chunk in retrieved_knowledge
+        if request.city.lower() in chunk.lower()
+    ]
+
+    interest_filtered_knowledge = [
+        chunk for chunk in city_filtered_knowledge
+        if request.interests.lower() in chunk.lower()
+    ]
+
+    if interest_filtered_knowledge:
+        final_retrieved_knowledge = interest_filtered_knowledge
+    else:
+        final_retrieved_knowledge = city_filtered_knowledge
+
+    rag_places = extract_places_from_rag(final_retrieved_knowledge)
     tool_places = get_attractions(request.city, request.interests)
 
-    attractions = rag_places + [
+    combined_places = rag_places + [
         place for place in tool_places
         if place not in rag_places
     ]
+
+    attractions = prioritize_places_by_interest(
+        request.city,
+        request.interests,
+        combined_places
+    )
 
     food_recommendation = get_food_recommendation(request.city, request.budget)
     weather_note = make_weather_aware_note(weather)
@@ -235,7 +303,7 @@ def plan_trip(request: TripRequest):
 
         "short_term_memory": conversation_memory,
         "long_term_memory_retrieved": similar_memories,
-        "rag_retrieved_knowledge": retrieved_knowledge,
+        "rag_retrieved_knowledge": final_retrieved_knowledge,
         "rag_suggested_places": rag_places,
 
         "user_preferences": {
@@ -257,7 +325,7 @@ def plan_trip(request: TripRequest):
             "The planner decided which tools were relevant and created an execution plan.",
             "The agent retrieved related memories and travel knowledge before generating the itinerary.",
             "RAG retrieved relevant destination knowledge, and matching places were extracted from the retrieved context.",
-            "The itinerary prioritizes RAG-suggested places first, then fills remaining slots using the attraction database.",
+            "The itinerary prioritizes places that match the user's interests, then fills remaining slots using RAG and the attraction database.",
             "Weather, budget, and travel style constraints were considered before finalizing the itinerary."
         ],
 

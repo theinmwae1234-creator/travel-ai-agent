@@ -125,7 +125,8 @@ Example:
 Query:
 
 ```text
-Tokyo anime food
+"city": "Tokyo",
+"interests": "anime"
 ```
 
 Retrieved Knowledge:
@@ -155,8 +156,21 @@ The planner performs the following sequence:
 The execution plan and reasoning trace are returned as part of the API response to improve transparency.
 
 ---
+## 7. Supported Inputs
 
-## 7. Deployment
+### City
+Tokyo, Singapore, Paris
+
+### Interests
+Anime, Food, Culture, Nature, Shopping, Art
+
+### Budget
+Low, Medium, High
+
+### Travel Style
+General, Relaxed, Family, Adventure, Pet-Friendly
+
+## 8. Deployment
 
 The application is deployed using Render.
 
@@ -186,7 +200,7 @@ GitHub Repository
 
 ---
 
-## 8. Limitations
+## 9. Limitations
 
 Current limitations include:
 
