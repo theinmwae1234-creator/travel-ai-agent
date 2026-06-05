@@ -109,6 +109,21 @@ def get_weather(city: str):
         return "Weather lookup failed."
 
 
+def make_weather_aware_note(weather: str):
+    try:
+        temperature = float(weather.replace("°C", ""))
+
+        if temperature >= 30:
+            return "Weather is hot, so the agent prioritizes indoor, shaded, or lower-effort activities."
+        elif temperature <= 10:
+            return "Weather is cold, so the agent recommends indoor stops and warm food options."
+        else:
+            return "Weather is comfortable, so both indoor and outdoor activities are suitable."
+
+    except Exception:
+        return "Weather data could not be interpreted, so the agent uses a general itinerary."
+
+
 @app.get("/")
 def home():
     return {"message": "Travel AI Agent is running!"}
@@ -116,12 +131,14 @@ def home():
 
 @app.post("/plan-trip")
 def plan_trip(request: TripRequest):
+    # Short-term memory
     conversation_memory.append({
         "city": request.city,
         "interests": request.interests,
         "budget": request.budget
     })
 
+    # Long-term memory query
     memory_text = (
         f"City: {request.city}, "
         f"Interests: {request.interests}, "
@@ -131,49 +148,58 @@ def plan_trip(request: TripRequest):
     similar_memories = retrieve_memory(memory_text)
     save_memory(memory_text)
 
-    attractions = get_attractions(request.city, request.interests)
-    food_recommendation = get_food_recommendation(request.city, request.budget)
+    # Tool execution
     weather = get_weather(request.city)
+
+    planning_result = create_plan(
+        request.city,
+        request.interests,
+        request.budget,
+        weather
+    )
 
     rag_query = f"{request.city} {request.interests} travel attractions food"
     retrieved_knowledge = retrieve_travel_knowledge(rag_query)
 
-    execution_plan = create_plan(
-        request.city,
-        request.interests,
-        request.budget
-    )
+    attractions = get_attractions(request.city, request.interests)
+    food_recommendation = get_food_recommendation(request.city, request.budget)
+    weather_note = make_weather_aware_note(weather)
 
     itinerary = {
         "city": request.city,
         "trip_length": "2 days",
         "current_weather": weather,
+        "weather_aware_note": weather_note,
+
         "short_term_memory": conversation_memory,
         "long_term_memory_retrieved": similar_memories,
         "rag_retrieved_knowledge": retrieved_knowledge,
+
         "user_preferences": {
             "interests": request.interests,
             "budget": request.budget
         },
-        "tools_used": [
-            "Attraction database tool",
-            "Food recommendation tool",
-            "Weather tool (Open-Meteo)",
-            "FAISS long-term memory tool",
-            "RAG travel knowledge retriever",
-            "Dynamic planning tool"
-        ],
-        "execution_plan": execution_plan,
+
+        "selected_tools": planning_result["selected_tools"],
+        "tools_used": planning_result["selected_tools"],
+
+        "execution_plan": planning_result["execution_plan"],
+        "planning_notes": planning_result["planning_notes"],
+
         "agent_reasoning": [
-            f"Planner created execution plan: {execution_plan}",
-            "The agent executed memory retrieval, RAG retrieval, weather lookup, attraction lookup, and food recommendation based on the plan.",
-            "The retrieved information was combined into a personalized 2-day itinerary."
+            "The agent analyzed the user request and selected tools based on city, interests, budget, and weather availability.",
+            "The planner decided which tools were relevant and created an execution plan.",
+            "The agent retrieved related memories and travel knowledge before generating the itinerary.",
+            "Weather conditions were considered when deciding how suitable indoor and outdoor activities are.",
+            "The final itinerary combines attractions, food recommendations, memory, RAG knowledge, and weather-aware planning."
         ],
+
         "day_1": {
             "morning": attractions[0] if len(attractions) > 0 else "Explore city centre",
             "afternoon": attractions[1] if len(attractions) > 1 else "Visit a popular local area",
             "evening": food_recommendation
         },
+
         "day_2": {
             "morning": attractions[2] if len(attractions) > 2 else "Visit a cultural attraction",
             "afternoon": attractions[3] if len(attractions) > 3 else "Explore a shopping or leisure district",
