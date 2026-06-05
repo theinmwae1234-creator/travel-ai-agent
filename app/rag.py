@@ -9,20 +9,42 @@ def load_knowledge_base(file_path="data/travel_knowledge.txt"):
     ]
 
 
-def retrieve_travel_knowledge(query, top_k=2):
+def retrieve_travel_knowledge(query, top_k=3):
     chunks = load_knowledge_base()
 
-    query_words = set(query.lower().replace(",", "").split())
+    query_words = set(
+        query.lower()
+        .replace(",", "")
+        .replace(".", "")
+        .split()
+    )
+
     scored_chunks = []
 
     for chunk in chunks:
-        chunk_words = set(chunk.lower().replace(",", "").split())
-        score = len(query_words.intersection(chunk_words))
-        scored_chunks.append((score, chunk))
+        chunk_words = set(
+            chunk.lower()
+            .replace(",", "")
+            .replace(".", "")
+            .split()
+        )
 
-    scored_chunks.sort(reverse=True)
+        score = len(query_words.intersection(chunk_words))
+
+        scored_chunks.append(
+            {
+                "score": score,
+                "text": chunk
+            }
+        )
+
+    scored_chunks.sort(
+        key=lambda x: x["score"],
+        reverse=True
+    )
 
     return [
-        chunk for score, chunk in scored_chunks[:top_k]
-        if score > 0
+        item["text"]
+        for item in scored_chunks[:top_k]
+        if item["score"] > 0
     ]

@@ -124,6 +124,41 @@ def make_weather_aware_note(weather: str):
         return "Weather data could not be interpreted, so the agent uses a general itinerary."
 
 
+def extract_places_from_rag(retrieved_knowledge):
+    known_places = [
+        "Akihabara",
+        "Nakano Broadway",
+        "Tsukiji Outer Market",
+        "Shinjuku Omoide Yokocho",
+        "Sensoji Temple",
+        "Tokyo Skytree",
+        "Meiji Shrine",
+        "Shibuya",
+        "Harajuku",
+        "Lau Pa Sat",
+        "Maxwell Food Centre",
+        "Gardens by the Bay",
+        "Singapore Botanic Gardens",
+        "Chinatown",
+        "Little India",
+        "Kampong Glam",
+        "Eiffel Tower",
+        "Louvre Museum",
+        "Montmartre",
+        "Le Marais",
+        "Musée d'Orsay"
+    ]
+
+    extracted_places = []
+
+    for chunk in retrieved_knowledge:
+        for place in known_places:
+            if place.lower() in chunk.lower() and place not in extracted_places:
+                extracted_places.append(place)
+
+    return extracted_places
+
+
 @app.get("/")
 def home():
     return {"message": "Travel AI Agent is running!"}
@@ -131,14 +166,12 @@ def home():
 
 @app.post("/plan-trip")
 def plan_trip(request: TripRequest):
-    # Short-term memory
     conversation_memory.append({
         "city": request.city,
         "interests": request.interests,
         "budget": request.budget
     })
 
-    # Long-term memory query
     memory_text = (
         f"City: {request.city}, "
         f"Interests: {request.interests}, "
@@ -148,7 +181,6 @@ def plan_trip(request: TripRequest):
     similar_memories = retrieve_memory(memory_text)
     save_memory(memory_text)
 
-    # Tool execution
     weather = get_weather(request.city)
 
     planning_result = create_plan(
@@ -161,7 +193,14 @@ def plan_trip(request: TripRequest):
     rag_query = f"{request.city} {request.interests} travel attractions food"
     retrieved_knowledge = retrieve_travel_knowledge(rag_query)
 
-    attractions = get_attractions(request.city, request.interests)
+    rag_places = extract_places_from_rag(retrieved_knowledge)
+    tool_places = get_attractions(request.city, request.interests)
+
+    attractions = rag_places + [
+        place for place in tool_places
+        if place not in rag_places
+    ]
+
     food_recommendation = get_food_recommendation(request.city, request.budget)
     weather_note = make_weather_aware_note(weather)
 
@@ -174,6 +213,7 @@ def plan_trip(request: TripRequest):
         "short_term_memory": conversation_memory,
         "long_term_memory_retrieved": similar_memories,
         "rag_retrieved_knowledge": retrieved_knowledge,
+        "rag_suggested_places": rag_places,
 
         "user_preferences": {
             "interests": request.interests,
@@ -190,8 +230,9 @@ def plan_trip(request: TripRequest):
             "The agent analyzed the user request and selected tools based on city, interests, budget, and weather availability.",
             "The planner decided which tools were relevant and created an execution plan.",
             "The agent retrieved related memories and travel knowledge before generating the itinerary.",
-            "Weather conditions were considered when deciding how suitable indoor and outdoor activities are.",
-            "The final itinerary combines attractions, food recommendations, memory, RAG knowledge, and weather-aware planning."
+            "RAG retrieved relevant destination knowledge, and matching places were extracted from the retrieved context.",
+            "The itinerary prioritizes RAG-suggested places first, then fills remaining slots using the attraction database.",
+            "Weather and budget conditions were considered before finalizing the itinerary."
         ],
 
         "day_1": {
