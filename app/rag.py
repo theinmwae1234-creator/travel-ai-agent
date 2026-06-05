@@ -1,45 +1,28 @@
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-dimension = 384
-rag_index = faiss.IndexFlatL2(dimension)
-knowledge_chunks = []
-
-
 def load_knowledge_base(file_path="data/travel_knowledge.txt"):
-    global knowledge_chunks
-
     with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
 
-    knowledge_chunks = [
+    return [
         chunk.strip()
         for chunk in text.split("\n\n")
         if chunk.strip()
     ]
 
-    embeddings = model.encode(knowledge_chunks)
-    rag_index.add(np.array(embeddings).astype("float32"))
-
 
 def retrieve_travel_knowledge(query, top_k=2):
-    if len(knowledge_chunks) == 0:
-        load_knowledge_base()
+    chunks = load_knowledge_base()
 
-    query_embedding = model.encode([query])
+    query_words = set(query.lower().replace(",", "").split())
+    scored_chunks = []
 
-    distances, indices = rag_index.search(
-        np.array(query_embedding).astype("float32"),
-        top_k
-    )
+    for chunk in chunks:
+        chunk_words = set(chunk.lower().replace(",", "").split())
+        score = len(query_words.intersection(chunk_words))
+        scored_chunks.append((score, chunk))
 
-    retrieved_chunks = []
+    scored_chunks.sort(reverse=True)
 
-    for idx in indices[0]:
-        if idx < len(knowledge_chunks):
-            retrieved_chunks.append(knowledge_chunks[idx])
-
-    return retrieved_chunks
+    return [
+        chunk for score, chunk in scored_chunks[:top_k]
+        if score > 0
+    ]

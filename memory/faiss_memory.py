@@ -1,40 +1,25 @@
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-dimension = 384
-index = faiss.IndexFlatL2(dimension)
-
 memory_store = []
 
 
 def save_memory(text):
-    embedding = model.encode([text])
-
-    index.add(
-        np.array(embedding).astype("float32")
-    )
-
     memory_store.append(text)
 
 
 def retrieve_memory(query, top_k=3):
-    if len(memory_store) == 0:
+    if not memory_store:
         return []
 
-    query_embedding = model.encode([query])
+    query_words = set(query.lower().replace(",", "").split())
+    scored_memories = []
 
-    distances, indices = index.search(
-        np.array(query_embedding).astype("float32"),
-        top_k
-    )
+    for memory in memory_store:
+        memory_words = set(memory.lower().replace(",", "").split())
+        score = len(query_words.intersection(memory_words))
+        scored_memories.append((score, memory))
 
-    results = []
+    scored_memories.sort(reverse=True)
 
-    for idx in indices[0]:
-        if idx < len(memory_store):
-            results.append(memory_store[idx])
-
-    return results
+    return [
+        memory for score, memory in scored_memories[:top_k]
+        if score > 0
+    ]
