@@ -2,9 +2,7 @@
 
 ## 1. Introduction
 
-The Intelligent Travel Planning AI Agent is a FastAPI-based system that generates personalized 2-day travel itineraries based on user preferences. The project demonstrates the use of multiple tools, memory systems, retrieval-augmented generation (RAG), planning logic, and cloud deployment.
-
-The objective is to simulate an intelligent agent capable of reasoning about user requests and coordinating multiple components to produce a customized travel plan.
+The Intelligent Travel Planning AI Agent is a FastAPI-based system that generates personalized 2-day travel itineraries based on user preferences.
 
 ---
 
@@ -38,7 +36,7 @@ The planner acts as the central controller and determines which tools should be 
 
 ## 3. Tool Selection
 
-The agent uses multiple tools to gather information and construct travel recommendations.
+The agent uses weather, food recommendation and attraction recommendation tools to gather information and construct travel recommendations base on user inputs.
 
 ### Weather Tool
 
@@ -113,13 +111,7 @@ A previous Tokyo anime trip can influence future anime-related recommendations.
 
 ## 5. Retrieval-Augmented Generation (RAG)
 
-The project uses a lightweight RAG implementation.
-
-Knowledge Source:
-
-```text
-data/travel_knowledge.txt
-```
+The project uses a  RAG implementation.
 
 Process:
 
@@ -200,22 +192,7 @@ Current limitations include:
 
 * Small travel knowledge base
 * Rule-based planning logic
-* No hotel recommendation API
-* No flight recommendation API
 * Limited city coverage
-
----
-
-## 9. Future Improvements
-
-Potential future enhancements include:
-
-* Real FAISS vector database integration
-* Multi-hop retrieval pipeline
-* Hotel and flight recommendation APIs
-* LLM-powered itinerary generation
-* Multilingual travel planning
-* User authentication and profiles
 
 ---
 

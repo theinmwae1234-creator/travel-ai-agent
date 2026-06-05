@@ -18,29 +18,21 @@ https://github.com/theinmwae1234-creator/travel-ai-agent.git
 
 ## Features
 
-- Personalized 2-day itinerary generation
-- FastAPI REST API
-- Swagger API documentation
-- Weather API integration using Open-Meteo
-- Attraction recommendation tool
-- Food recommendation tool
-- Short-term memory for current session context
-- Long-term memory for storing user preferences
-- RAG-style travel knowledge retrieval
+- 2-day itinerary generation
+- Weather Forecasting (Tool)
+- Attraction recommendation (Tool)
+- Food recommendation (Tool)
+- Short-term memory 
+- Long-term memory 
+- Retrieval Augmented Generation
 - Dynamic planning mechanism
-- Render cloud deployment
+- Cloud deployment (Render)
 
 ## Tools Used
 
-1. Weather Tool (Open-Meteo API)
-
-2. Attraction Database Tool
-
-3. Food Recommendation Tool.
-
-4. Memory Tool  
-
-5. RAG Travel Knowledge Retriever  
+1. Weather Forecasting - Using the longtitude and the latitude of the selected city the system send a HTTP GET request to Open Meteo to retrive the current temperature of the city. Then the temperature is catagorised into hot, cold and comfortable.
+2. Attraction Recommendation - Using a local Python dictionary for each city (Singapore, Tokyo, Paris) the system map to anime, food,culture, shopping, nature and art. Using the interest keywords the matching attraction is return from the database.
+3. Food Recommendation -  Using the  budget input from the user it catagorizze food recommenation base on the city.
 
 ## Short-Term Memory
 
@@ -57,7 +49,7 @@ Use FAIS-inspired memory system
 
 - Save previous user preferences
 - Retrieve similar past travel requests
-- Demonstrate persistent memory across sessions
+- Demonstrate memory across sessions
 
 
 ### Planning
@@ -65,30 +57,11 @@ Use FAIS-inspired memory system
 The planner:
 
 1. Analyzes the user request
-2. Selects relevant tools
-3. Creates an execution plan
+2. Using relevant tools retrive using the input - city, interests and budget
+3. Creates an execution plan (After  retriving from the database base on user's preference)
 4. Retrieves memory and travel knowledge
 5. Generates a personalized itinerary
 6. Retrieval-Augmented Generation (RAG)
-
-The RAG component:
-
-- Searches a travel knowledge base
-- Retrieves relevant travel information
-- Extracts destination-specific locations
-- Influences itinerary generation
-
-### Constraint Support
-
-Supports travel constraints such as:
-
-- Budget (Low / Medium / High)
-- Travel Style
-   - General
-   - Relaxed
-   - Family
-   - Adventure
-   - Pet-Friendly
 
 ### REST API
 
@@ -103,74 +76,23 @@ POST /plan-trip
 travel-ai-agent/
 │
 ├── app/
-│   ├── planner.py                # Planning and tool-selection logic
-│   └── rag.py                    # RAG retrieval and place extraction
+│   ├── planner.py                
+│   └── rag.py                    
 │
 ├── data/
-│   └── travel_knowledge.txt      # Travel knowledge base used for RAG
+│   └── travel_knowledge.txt      
 │
-├── docs/                         # Documentation files
-│
+├── docs/                         
+│   └── Technical_Document.md
 ├── memory/
-│   └── faiss_memory.py           # Long-term memory storage and retrieval
+│   └── faiss_memory.py           
 │
-├── main.py                       # FastAPI application and API endpoints
-├── README.md                     # Project documentation
-├── requirements.txt              # Python dependencies
-├── render.yaml                   # Render deployment configuration
+├── main.py                       
+├── README.md                     
+├── requirements.txt              
+├── render.yaml                   
 ├── .gitignore
 └── .env
-```
-## System Architecture
-
-```text
-User
- │
- ▼
-FastAPI REST API
-POST /plan-trip
- │
- ▼
-Request Parser
-(city, interests, budget, travel_style)
- │
- ▼
-Planner
-- Creates execution plan
-- Selects relevant tools
-- Adds planning notes
- │
- ├──────────────► Weather Tool
- │                - Gets current weather from Open-Meteo
- │
- ├──────────────► Attraction Tool
- │                - Finds attractions from local database
- │
- ├──────────────► Food Tool
- │                - Selects food recommendations by budget
- │
- ├──────────────► Short-Term Memory
- │                - Stores current session requests
- │
- ├──────────────► Long-Term Memory
- │                - Saves and retrieves past user preferences
- │
- └──────────────► RAG Retriever
-                  - Searches travel_knowledge.txt
-                  - Retrieves relevant knowledge
-                  - Extracts suggested places
- │
- ▼
-Itinerary Generator
-- Combines weather, memory, RAG, tools, and constraints
- │
- ▼
-JSON Response
-- 2-day itinerary
-- selected_tools
-- execution_plan
-- planning_notes
-- rag_suggested_places
 ```
 
 ## Request (Example)
@@ -205,7 +127,7 @@ cd travel-ai-agent
 
 pip install -r requirements.txt
 
-# Run Application
+# Virtual Environment
 
 uvicorn main:app --reload
 
@@ -220,7 +142,6 @@ The project is deployed on Render using:
 - FastAPI
 - Uvicorn
 - GitHub Integration
-- Auto Deployment
 
 ## Technologies Used
 
