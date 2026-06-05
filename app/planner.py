@@ -3,6 +3,9 @@ def create_plan(city, interests, budget, weather):
     selected_tools = []
     planning_notes = []
 
+    interests_lower = interests.lower()
+    budget_lower = budget.lower()
+
     plan.append("Analyze user request")
 
     selected_tools.append("Memory tool")
@@ -14,32 +17,26 @@ def create_plan(city, interests, budget, weather):
     if city:
         selected_tools.append("Weather tool")
         plan.append("Check current weather for the destination")
-    else:
-        planning_notes.append("Weather tool skipped because no city was provided.")
 
-    if interests:
+    if any(word in interests_lower for word in ["anime", "culture", "shopping", "nature", "art"]):
         selected_tools.append("Attraction database tool")
         plan.append("Find attractions matching user interests")
-    else:
-        planning_notes.append("Attraction tool skipped because no interests were provided.")
 
-    if budget:
+    if "food" in interests_lower or budget_lower in ["low", "medium", "high"]:
         selected_tools.append("Food recommendation tool")
-        plan.append("Select food options based on budget")
-    else:
-        planning_notes.append("Food tool skipped because no budget was provided.")
+        plan.append("Select food options based on budget and food interest")
 
-    if weather != "Weather data unavailable for this city." and weather != "Weather lookup failed.":
+    if weather not in ["Weather data unavailable for this city.", "Weather lookup failed."]:
         try:
             temperature = float(weather.replace("°C", ""))
 
             if temperature >= 30:
                 planning_notes.append(
-                    "Weather is hot, so the itinerary should prioritize indoor, shaded, or lower-effort activities."
+                    "Weather is hot, so the agent prioritizes indoor, shaded, or lower-effort activities."
                 )
             elif temperature <= 10:
                 planning_notes.append(
-                    "Weather is cold, so the itinerary should include warm indoor stops and cafés."
+                    "Weather is cold, so the agent prioritizes indoor attractions and warm food stops."
                 )
             else:
                 planning_notes.append(
@@ -48,6 +45,13 @@ def create_plan(city, interests, budget, weather):
 
         except ValueError:
             planning_notes.append("Weather data was retrieved but could not be interpreted.")
+
+    if budget_lower == "low":
+        planning_notes.append("Budget is low, so the agent prioritizes affordable food and low-cost attractions.")
+    elif budget_lower == "medium":
+        planning_notes.append("Budget is medium, so the agent balances affordability and experience quality.")
+    elif budget_lower == "high":
+        planning_notes.append("Budget is high, so the agent can include premium dining or experiences.")
 
     plan.append("Generate personalized 2-day itinerary")
 
